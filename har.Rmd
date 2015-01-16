@@ -1,3 +1,65 @@
 # Human Activity Recognition
 
 Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## R Libraries
+The following libraries were used
+```{r}
+library(kernlab)
+library(caret)
+library(randomForest)
+```
+
+##Data 
+The training data for this project are available here: 
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here: 
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The 2 files were copied to the working directory. While copying the files the "NA" column values were removed.
+```{r}
+data_training <- read.csv("D:/Learning/Statictics/Practical Machine Learning/Human Activity Recognition/input/pml-training.csv", na.strings= c("NA",""," "))
+data_testing <- read.csv("D:/Learning/Statictics/Practical Machine Learning/Human Activity Recognition/input/pml-testing.csv", na.strings= c("NA",""," "))
+```
+Some of the unnecessary columns are also filtered in the process for the training and test files.
+```{r}
+data_training_filter <- apply(data_training, 2, function(x) {sum(is.na(x))})
+data_training_clean <- data_training[,which(data_training_filter == 0)]
+data_training_clean <- data_training_clean[8:length(data_training_clean)]
+
+data_test_filter <- apply(data_testing, 2, function(x) {sum(is.na(x))})
+data_testing_clean <- data_testing[,which(data_test_filter == 0)]
+data_testing_clean <- data_testing_clean[8:length(data_testing_clean)]
+```
+##Model Creation
+The model is split into training and validation files in the ratio 75:25
+```{r}
+inTrain <- createDataPartition(y = data_training_clean$classe, p = 0.75, list = FALSE)
+training <- data_training_clean[inTrain, ]
+crossValidation <- data_training_clean[-inTrain, ]
+```
+###Predicting with Random Forests
+```{r}
+model <- randomForest(classe ~ ., data = training)
+```
+##Prediction
+The model was then predicted against the 75 % training data and 25 % validation data 
+```{r}
+predictTraining <- predict(model, training)
+confusionMatrix(training$classe, predictTraining)
+```
+Cross- validation
+```{r}
+predictCrossValidation <- predict(model, crossValidation)
+confusionMatrix(crossValidation$classe, predictCrossValidation)
+```
+The cross validation gave an output which predicted the model's accuracy at 99.53 %. This model was then applied to the test data.
+```{r}
+predictTesting <- predict(model, data_testing_clean)
+predictTesting
+```
+##Final Conclusion
+With proper cleaning of the data along with the Random Forest algorithm proved sufficent to predict the output for the test data provided.
