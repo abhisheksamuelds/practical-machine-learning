@@ -1,6 +1,6 @@
 # Human Activity Recognition
 
-Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement who are a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behaviour, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
 
 ## R Libraries
 The following libraries were used
@@ -8,9 +8,10 @@ The following libraries were used
 library(kernlab)
 library(caret)
 library(randomForest)
+library(rpart)
 ```
 
-##Data 
+## Data 
 The training data for this project are available here: 
 
 https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
@@ -34,18 +35,30 @@ data_test_filter <- apply(data_testing, 2, function(x) {sum(is.na(x))})
 data_testing_clean <- data_testing[,which(data_test_filter == 0)]
 data_testing_clean <- data_testing_clean[8:length(data_testing_clean)]
 ```
-##Model Creation
+## Model Creation
 The model is split into training and validation files in the ratio 75:25
 ```{r}
 inTrain <- createDataPartition(y = data_training_clean$classe, p = 0.75, list = FALSE)
 training <- data_training_clean[inTrain, ]
 crossValidation <- data_training_clean[-inTrain, ]
 ```
-###Predicting with Random Forests
+### Predicting with Decision Trees
+```{r}
+model <- rpart(classe ~ ., data = training,method = "class")
+```
+The model was then predicted against the 75 % training data and 25 % validation data 
+```{r}
+predictTraining <- predict(model, training, type = "class")
+confusionMatrix(training$classe, predictTraining)
+```
+The prediction against this model gave an output which predicted the model's accuracy at 76.29 %. This was quite poor and was abandoned.
+### Predicting with Random Forests
 ```{r}
 model <- randomForest(classe ~ ., data = training)
+model
 ```
-##Prediction
+The model gave an OOB estimate of error rate as 0.49%. From the confusion matrix it is clear that the prediction errors are very low. So the Random Forest model was selected
+## Prediction
 The model was then predicted against the 75 % training data and 25 % validation data 
 ```{r}
 predictTraining <- predict(model, training)
@@ -56,10 +69,10 @@ Cross- validation
 predictCrossValidation <- predict(model, crossValidation)
 confusionMatrix(crossValidation$classe, predictCrossValidation)
 ```
-The cross validation gave an output which predicted the model's accuracy at 99.53 %. This model was then applied to the test data.
+The cross validation gave an output which predicted the model's accuracy at 99.29 %. This model was then applied to the test data.
 ```{r}
 predictTesting <- predict(model, data_testing_clean)
 predictTesting
 ```
-##Final Conclusion
-With proper cleaning of the data along with the Random Forest algorithm proved sufficent to predict the output for the test data provided.
+## Final Conclusion
+With proper cleaning of the data along with the Random Forest algorithm proved sufficient to predict the output for the test data provided.
